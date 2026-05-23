@@ -84,23 +84,6 @@
         html.cursor-hidden #message {
             cursor: none !important;
         }
-        html.slideshow-fullscreen,
-        html.slideshow-fullscreen body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-        html.slideshow-fullscreen #stage {
-            width: 100%;
-            height: 100%;
-        }
-        html.slideshow-fullscreen #photoFrame {
-            left: 0;
-            top: 0;
-        }
-        html.slideshow-fullscreen #message {
-            opacity: 0.85;
-        }
     </style>
 </head>
 <body>
@@ -108,7 +91,7 @@
         <div id="centerCell">
             <div id="displayZoneGuide" aria-hidden="true"></div>
             <div id="photoFrame">
-                <img id="photo" alt="Slideshow photo" title="Click: next photo. Double-click: full screen." />
+                <img id="photo" alt="Slideshow photo" title="Tap or click: next photo." />
             </div>
         </div>
     </div>
@@ -138,10 +121,7 @@
         var lastMouseX = -1;
         var lastMouseY = -1;
         var mouseMoveThreshold = 3;
-        var savedPhotoTitle = 'Click: next photo. Double-click: full screen.';
-        var clickDelayMs = 320;
-        var clickTimerId = null;
-        var fullscreenClass = 'slideshow-fullscreen';
+        var savedPhotoTitle = 'Tap or click: next photo.';
 
         function hidePhotoTooltip() {
             if (photoEl.getAttribute('title')) {
@@ -334,131 +314,15 @@
             }, LAYOUT_POLL_MS);
         }
 
-        function hasFullscreenClass() {
-            var cls = document.documentElement.className || '';
-            return cls.indexOf(fullscreenClass) >= 0;
-        }
-
-        function setFullscreenClass(on) {
-            var root = document.documentElement;
-            var cls = root.className || '';
-            var re = new RegExp('(^|\\s)' + fullscreenClass + '(\\s|$)', 'g');
-            if (on) {
-                if (cls.indexOf(fullscreenClass) === -1) {
-                    root.className = trimString(cls + ' ' + fullscreenClass);
-                }
-            } else {
-                root.className = trimString(cls.replace(re, ' '));
-            }
-        }
-
-        function isFullscreen() {
-            return !!(document.fullscreenElement || document.webkitFullscreenElement
-                || document.mozFullScreenElement || document.msFullscreenElement)
-                || hasFullscreenClass();
-        }
-
-        function requestFullscreen() {
-            var el = document.documentElement;
-            if (el.requestFullscreen) {
-                el.requestFullscreen();
-                return true;
-            }
-            if (el.webkitRequestFullscreen) {
-                el.webkitRequestFullscreen();
-                return true;
-            }
-            if (el.webkitRequestFullScreen) {
-                el.webkitRequestFullScreen();
-                return true;
-            }
-            if (el.mozRequestFullScreen) {
-                el.mozRequestFullScreen();
-                return true;
-            }
-            if (el.msRequestFullscreen) {
-                el.msRequestFullscreen();
-                return true;
-            }
-            setFullscreenClass(true);
-            applyFullscreenLayout();
-            return true;
-        }
-
-        function exitFullscreen() {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-                return;
-            }
-            if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-                return;
-            }
-            if (document.webkitCancelFullScreen) {
-                document.webkitCancelFullScreen();
-                return;
-            }
-            if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-                return;
-            }
-            if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-                return;
-            }
-            setFullscreenClass(false);
-            applySize();
-        }
-
-        function applyFullscreenLayout() {
-            var vw;
-            var vh;
-            if (typeof PhotoFrameLayout !== 'undefined') {
-                PhotoFrameLayout.syncStageViewport(stageEl, centerCellEl);
-                vw = PhotoFrameLayout.viewportWidth();
-                vh = PhotoFrameLayout.viewportHeight();
-            } else {
-                vw = document.documentElement.clientWidth || 800;
-                vh = document.documentElement.clientHeight || 600;
-            }
-            photoFrameEl.style.cssText = 'position:absolute;margin:0;padding:0;overflow:hidden;'
-                + 'line-height:0;text-align:center;left:0;top:0;width:' + vw + 'px;height:' + vh + 'px;';
-            lastFrameLayout = { width: vw, height: vh, x: 0, y: 0 };
-        }
-
-        function toggleFullscreen() {
-            showCursor();
-            if (isFullscreen()) {
-                exitFullscreen();
-                setMessage('Every ' + config.intervalSec + 's - tap: next, double-click: full screen', false);
-            } else {
-                requestFullscreen();
-                setMessage('Full screen — double-click again to exit', false);
-            }
-        }
-
-        function onFullscreenChange() {
-            if (!isFullscreen()) {
-                setFullscreenClass(false);
-                applySize();
-            } else {
-                applyFullscreenLayout();
-                fitImageWithRetry(0);
-            }
+        function slideshowStatusMessage() {
+            return 'Every ' + config.intervalSec + 's — tap or click for next photo';
         }
 
         function applySize() {
             if (typeof PhotoFrameLayout !== 'undefined') {
                 PhotoFrameLayout.syncStageViewport(stageEl, centerCellEl);
             }
-            if (isFullscreen()) {
-                applyFullscreenLayout();
-                if (typeof PhotoFrameLayout !== 'undefined') {
-                    PhotoFrameLayout.applyDisplayZoneGuide(displayZoneGuideEl, null, true);
-                } else if (displayZoneGuideEl) {
-                    displayZoneGuideEl.style.display = 'none';
-                }
-            } else if (typeof PhotoFrameLayout !== 'undefined') {
+            if (typeof PhotoFrameLayout !== 'undefined') {
                 lastFrameLayout = PhotoFrameLayout.applyToFrame(
                     photoFrameEl, getLayoutSettingsRaw());
                 PhotoFrameLayout.applyDisplayZoneGuide(
@@ -525,7 +389,7 @@
                         if (imageUrl.indexOf('/api/photos/serve/') === 0) {
                             refreshLayoutAndApply(function() {
                                 photoEl.src = imageUrl;
-                                setMessage('Every ' + config.intervalSec + 's - tap: next, double-click: full screen', false);
+                                setMessage(slideshowStatusMessage(), false);
                                 scheduleTimer();
                             });
                             return;
@@ -545,22 +409,7 @@
 
         function onPhotoClick() {
             showCursor();
-            if (clickTimerId !== null) {
-                clearTimeout(clickTimerId);
-                clickTimerId = null;
-            }
-            clickTimerId = setTimeout(function() {
-                clickTimerId = null;
-                loadNextPhoto(true);
-            }, clickDelayMs);
-        }
-
-        function onPhotoDblClick() {
-            if (clickTimerId !== null) {
-                clearTimeout(clickTimerId);
-                clickTimerId = null;
-            }
-            toggleFullscreen();
+            loadNextPhoto(true);
         }
 
         function setCursorHidden(hidden) {
@@ -656,39 +505,23 @@
             showCursor();
         }
 
-        function bindFullscreenEvents() {
-            if (document.addEventListener) {
-                document.addEventListener('fullscreenchange', onFullscreenChange, false);
-                document.addEventListener('webkitfullscreenchange', onFullscreenChange, false);
-                document.addEventListener('mozfullscreenchange', onFullscreenChange, false);
-                document.addEventListener('MSFullscreenChange', onFullscreenChange, false);
-            } else if (document.attachEvent) {
-                document.attachEvent('onfullscreenchange', onFullscreenChange);
-            }
-        }
-
         function bindEvents() {
             if (photoEl.addEventListener) {
                 photoEl.addEventListener('click', onPhotoClick, false);
-                photoEl.addEventListener('dblclick', onPhotoDblClick, false);
                 photoEl.addEventListener('touchend', onPhotoClick, false);
                 photoEl.addEventListener('load', onPhotoLoaded, false);
                 photoEl.addEventListener('error', onPhotoError, false);
-                stageEl.addEventListener('dblclick', onPhotoDblClick, false);
                 stageEl.addEventListener('mouseenter', onStageMouseEnter, false);
                 stageEl.addEventListener('mousemove', onStageMouseMove, false);
                 stageEl.addEventListener('mouseleave', onStageMouseLeave, false);
             } else if (photoEl.attachEvent) {
                 photoEl.attachEvent('onclick', onPhotoClick);
-                photoEl.attachEvent('ondblclick', onPhotoDblClick);
                 photoEl.attachEvent('onload', onPhotoLoaded);
                 photoEl.attachEvent('onerror', onPhotoError);
-                stageEl.attachEvent('ondblclick', onPhotoDblClick);
                 stageEl.attachEvent('onmouseenter', onStageMouseEnter);
                 stageEl.attachEvent('onmousemove', onStageMouseMove);
                 stageEl.attachEvent('onmouseleave', onStageMouseLeave);
             }
-            bindFullscreenEvents();
             if (window.addEventListener) {
                 window.addEventListener('resize', function() {
                     applySize();
