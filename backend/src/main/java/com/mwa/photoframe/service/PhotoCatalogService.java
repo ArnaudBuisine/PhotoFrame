@@ -136,9 +136,8 @@ public class PhotoCatalogService {
                 throw new IllegalStateException("Google source not initialized");
             }
             byte[] imageBytes = fetchGooglePhotoBytes(entry, googleCredentialProvider);
-            if (HeicImageConverter.isHeicMime(entry.getMimeType())) {
-                imageBytes = HeicImageConverter.toJpeg(imageBytes);
-            }
+            String label = entry.getId();
+            imageBytes = HeicImageConverter.toCacheJpeg(imageBytes, entry.getMimeType(), label);
             try {
                 GooglePhotosImageCache.saveJpeg(imageCacheService.cacheDir(), entry.getId(), imageBytes);
             } catch (IOException saveEx) {
@@ -153,7 +152,7 @@ public class PhotoCatalogService {
             throws Exception {
         String baseUrl = entry.getGoogleBaseUrl();
         HttpResponseException lastError = null;
-        for (String url : googleFetchUrlCandidates(baseUrl)) {
+        for (String url : googleFetchUrlCandidates(baseUrl, entry.getMimeType())) {
             try {
                 return executeGooglePhotoFetch(credentialProvider, url);
             } catch (HttpResponseException ex) {
@@ -181,12 +180,19 @@ public class PhotoCatalogService {
         }
     }
 
-    static String[] googleFetchUrlCandidates(String baseUrl) {
+    static String[] googleFetchUrlCandidates(String baseUrl, String mimeType) {
         if (baseUrl == null || baseUrl.isEmpty()) {
             return new String[0];
         }
         if (baseUrl.indexOf('=') >= 0) {
             return new String[] { baseUrl };
+        }
+        if (HeicImageConverter.isHeicMime(mimeType)) {
+            return new String[] {
+                    baseUrl + "=d",
+                    baseUrl + "=w2048-h1536",
+                    baseUrl + "=w0"
+            };
         }
         return new String[] {
                 baseUrl + "=w2048-h1536",

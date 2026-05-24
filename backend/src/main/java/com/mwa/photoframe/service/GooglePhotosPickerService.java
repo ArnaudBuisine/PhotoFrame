@@ -125,13 +125,21 @@ public class GooglePhotosPickerService {
                     PhotoErrorCode.PICKER_NOT_READY,
                     "Selection not finished. Complete picking in Google Photos, then try again.");
         }
-        List<GooglePhotosPickedStore.StoredPickedItem> incoming = listAllPickedMedia(sessionId);
+        PickedMediaBatch batch = listAllPickedMedia(sessionId);
+        List<GooglePhotosPickedStore.StoredPickedItem> incoming = batch.photos;
+        int skippedVideos = batch.skippedVideos;
         Path pickedPath = resolvePickedPath();
         int previousCount = GooglePhotosPickedStore.count(pickedPath);
         deleteSession(sessionId);
 
         if (incoming.isEmpty()) {
             if (previousCount == 0) {
+                if (skippedVideos > 0) {
+                    throw new PhotoFrameException(
+                            PhotoErrorCode.NO_IMAGES,
+                            "No photos were selected. " + skippedVideos
+                                    + " video(s) were skipped (videos are not supported).");
+                }
                 throw new PhotoFrameException(
                         PhotoErrorCode.NO_IMAGES,
                         "No photos were selected. Choose at least one photo in Google Photos.");
@@ -139,6 +147,7 @@ public class GooglePhotosPickerService {
             Map<String, Object> body = new HashMap<>();
             body.put("success", true);
             body.put("added", 0);
+            body.put("skippedVideos", skippedVideos);
             body.put("photoCount", previousCount);
             body.put("slideshowUrl", "/");
             body.put("message", "No new photos added. Total: " + previousCount + ".");
@@ -147,23 +156,64 @@ public class GooglePhotosPickerService {
 
         int added = GooglePhotosPickedStore.merge(pickedPath, incoming);
         int total = GooglePhotosPickedStore.count(pickedPath);
-        int cached = imageCacheService.warmItems(incoming);
-        log.info("Merged picker import: {} new, {} total, {} cached at {}", added, total, cached, pickedPath);
+        List<Map<String, Object>> toCache = buildToCacheList(incoming);
+        log.info("Merged picker import: {} new, {} total, {} to cache, {} videos skipped at {}",
+                added, total, toCache.size(), skippedVideos, pickedPath);
         Map<String, Object> body = new HashMap<>();
         body.put("success", true);
         body.put("added", added);
         body.put("imported", incoming.size());
-        body.put("cached", cached);
+        body.put("skippedVideos", skippedVideos);
+        body.put("toCache", toCache);
         body.put("photoCount", total);
         body.put("slideshowUrl", "/");
         if (added > 0) {
-            body.put("message", "Added " + added + " photo(s). Total: " + total
-                    + ". Downloaded " + cached + " to local cache for the slideshow.");
+            body.put("message", "Added " + added + " photo(s). Total: " + total + ".");
         } else {
-            body.put("message", "Updated " + incoming.size() + " photo(s). Total: " + total
-                    + ". Downloaded " + cached + " to local cache.");
+            body.put("message", "Updated " + incoming.size() + " photo(s). Total: " + total + ".");
         }
         return body;
+    }
+
+    public Map<String, Object> cachePhoto(String id) throws Exception {
+        GooglePhotosPickedStore.StoredPickedItem item = GooglePhotosPickedStore.findById(resolvePickedPath(), id);
+        if (item == null) {
+            throw new PhotoFrameException(PhotoErrorCode.NO_IMAGES, "Photo not found in selection.");
+        }
+        String label = item.filename != null && !item.filename.isEmpty() ? item.filename : id;
+        try {
+            boolean newlyCached = imageCacheService.cacheItem(item);
+            Map<String, Object> body = new HashMap<>();
+            body.put("success", true);
+            body.put("id", id);
+            body.put("filename", label);
+            body.put("newlyCached", newlyCached);
+            return body;
+        } catch (Exception ex) {
+            throw new PhotoFrameException(
+                    PhotoErrorCode.GOOGLE_API_ERROR,
+                    "Could not download \"" + label + "\": " + ex.getMessage(),
+                    ex);
+        }
+    }
+
+    private List<Map<String, Object>> buildToCacheList(List<GooglePhotosPickedStore.StoredPickedItem> incoming)
+            throws Exception {
+        Path pickedPath = resolvePickedPath();
+        List<Map<String, Object>> toCache = new ArrayList<>();
+        for (GooglePhotosPickedStore.StoredPickedItem item : GooglePhotosPickedStore.load(pickedPath)) {
+            if (item.id == null || item.id.isEmpty()) {
+                continue;
+            }
+            if (imageCacheService.isCached(item.id)) {
+                continue;
+            }
+            Map<String, Object> row = new HashMap<>();
+            row.put("id", item.id);
+            row.put("filename", item.filename != null && !item.filename.isEmpty() ? item.filename : item.id);
+            toCache.add(row);
+        }
+        return toCache;
     }
 
     public Map<String, Object> listPicked() throws Exception {
@@ -222,10 +272,11 @@ public class GooglePhotosPickerService {
         return body;
     }
 
-    private List<GooglePhotosPickedStore.StoredPickedItem> listAllPickedMedia(String sessionId) throws Exception {
+    private PickedMediaBatch listAllPickedMedia(String sessionId) throws Exception {
         GoogleCredential credential = credential();
         NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
-        List<GooglePhotosPickedStore.StoredPickedItem> all = new ArrayList<>();
+        List<GooglePhotosPickedStore.StoredPickedItem> photos = new ArrayList<>();
+        int skippedVideos = 0;
         String pageToken = null;
         do {
             GenericUrl url = new GenericUrl(PICKER_BASE + "mediaItems");
@@ -246,7 +297,12 @@ public class GooglePhotosPickerService {
             JsonNode mediaItems = root.get("mediaItems");
             if (mediaItems != null && mediaItems.isArray()) {
                 for (JsonNode item : mediaItems) {
-                    if (!"PHOTO".equals(text(item, "type"))) {
+                    String type = text(item, "type");
+                    if ("VIDEO".equals(type)) {
+                        skippedVideos++;
+                        continue;
+                    }
+                    if (!"PHOTO".equals(type)) {
                         continue;
                     }
                     JsonNode mediaFile = item.get("mediaFile");
@@ -266,7 +322,7 @@ public class GooglePhotosPickerService {
                         stored.mimeType = "image/jpeg";
                     }
                     stored.filename = text(mediaFile, "filename");
-                    all.add(stored);
+                    photos.add(stored);
                 }
             }
             pageToken = text(root, "nextPageToken");
@@ -274,7 +330,17 @@ public class GooglePhotosPickerService {
                 pageToken = null;
             }
         } while (pageToken != null);
-        return all;
+        return new PickedMediaBatch(photos, skippedVideos);
+    }
+
+    private static final class PickedMediaBatch {
+        private final List<GooglePhotosPickedStore.StoredPickedItem> photos;
+        private final int skippedVideos;
+
+        private PickedMediaBatch(List<GooglePhotosPickedStore.StoredPickedItem> photos, int skippedVideos) {
+            this.photos = photos;
+            this.skippedVideos = skippedVideos;
+        }
     }
 
     private void deleteSession(String sessionId) {

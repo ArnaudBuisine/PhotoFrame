@@ -25,6 +25,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>AsposeJavaRepo</id>
+            <name>Aspose Java Repository</name>
+            <url>https://releases.aspose.com/java/repo/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -45,6 +53,11 @@
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client-jackson2</artifactId>
             <version>1.43.3</version>
+        </dependency>
+        <dependency>
+            <groupId>openize</groupId>
+            <artifactId>openize-heic</artifactId>
+            <version>25.4</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

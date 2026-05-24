@@ -80,6 +80,18 @@ public final class GooglePhotosPickedStore {
         return added;
     }
 
+    public static StoredPickedItem findById(Path path, String id) throws IOException {
+        if (id == null || id.isEmpty()) {
+            return null;
+        }
+        for (StoredPickedItem item : load(path)) {
+            if (id.equals(item.id)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
     public static boolean removeById(Path path, String id) throws IOException {
         List<StoredPickedItem> items = new ArrayList<>(load(path));
         boolean removed = items.removeIf(item -> id.equals(item.id));

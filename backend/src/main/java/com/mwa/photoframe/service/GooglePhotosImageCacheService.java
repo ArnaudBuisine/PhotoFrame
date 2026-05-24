@@ -48,16 +48,30 @@ public class GooglePhotosImageCacheService {
             GooglePhotosPickedStore.StoredPickedItem item,
             GooglePhotosCredentialProvider credentialProvider) throws Exception {
         if (item == null || item.id == null || item.id.isEmpty() || item.baseUrl == null) {
-            return;
+            throw new IllegalArgumentException("Photo metadata is incomplete.");
         }
         String mime = item.mimeType != null ? item.mimeType : "image/jpeg";
         PhotoEntry entry = PhotoEntry.google(item.id, item.baseUrl, mime);
         byte[] bytes = PhotoCatalogService.fetchGooglePhotoBytes(entry, credentialProvider);
-        if (HeicImageConverter.isHeicMime(mime)) {
-            bytes = HeicImageConverter.toJpeg(bytes);
-        }
+        String label = item.filename != null ? item.filename : item.id;
+        bytes = HeicImageConverter.toCacheJpeg(bytes, mime, label);
         GooglePhotosImageCache.saveJpeg(cacheDir(), item.id, bytes);
         log.debug("Cached Google photo {} ({} bytes)", item.id, bytes.length);
+    }
+
+    /** Download one picked item to local cache. Returns false if already cached. */
+    public boolean cacheItem(GooglePhotosPickedStore.StoredPickedItem item) throws Exception {
+        if (item == null || item.id == null || item.id.isEmpty()) {
+            throw new IllegalArgumentException("Missing photo id.");
+        }
+        if (isCached(item.id)) {
+            return false;
+        }
+        GooglePhotosCredentials creds = googlePhotosService.loadCredentials();
+        Path pickedPath = resolvePickedPath();
+        GooglePhotosPickedPhotoSource provider = new GooglePhotosPickedPhotoSource(creds, pickedPath);
+        saveFromGoogle(item, provider);
+        return true;
     }
 
     public int warmItems(List<GooglePhotosPickedStore.StoredPickedItem> items) {
@@ -71,6 +85,9 @@ public class GooglePhotosImageCacheService {
             GooglePhotosPickedPhotoSource provider = new GooglePhotosPickedPhotoSource(creds, pickedPath);
             for (GooglePhotosPickedStore.StoredPickedItem item : items) {
                 try {
+                    if (isCached(item.id)) {
+                        continue;
+                    }
                     saveFromGoogle(item, provider);
                     cached++;
                 } catch (Exception ex) {

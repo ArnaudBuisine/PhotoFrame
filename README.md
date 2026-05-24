@@ -11,6 +11,10 @@ Full-screen photo slideshow for old browsers (including Safari on iPad 1). Java 
 - **Click or tap** the image to show the next photo immediately
 - Image source: **local folder** on disk or **Google Photos** (picker selection)
 
+## Dependencies
+
+HEIC → JPEG uses [Openize HEIC](https://github.com/openize-com/openize-heic-java) (pure Java). The library is resolved from the Aspose Maven repository (see `pom.xml`); no macOS `sips` or system tools required.
+
 ## Run
 
 ```bash
@@ -20,7 +24,7 @@ mvn spring-boot:run
 
 Open: **http://localhost:8082/** (query parameters on `/` are preserved; you can also use `/index.html?...`)
 
-Put JPEG/PNG/GIF/HEIC files in `photoframe/images/`. HEIC files are converted to JPEG when served (macOS `sips`), so older browsers can display iPhone photos.
+Put JPEG/PNG/GIF/HEIC files in `photoframe/images/`. HEIC files are converted to JPEG when served (pure Java via Openize HEIC), so older browsers can display iPhone photos.
 
 ## Slideshow layout (`/pick.html`)
 

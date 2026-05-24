@@ -75,4 +75,11 @@ public class PhotoGoogleController {
         catalogService.invalidateCatalog();
         return ResponseEntity.ok(body);
     }
+
+    @PostMapping("/cache/{id}")
+    public ResponseEntity<Map<String, Object>> cachePhoto(@PathVariable String id) throws Exception {
+        Map<String, Object> body = pickerService.cachePhoto(id);
+        catalogService.invalidateCatalog();
+        return ResponseEntity.ok(body);
+    }
 }

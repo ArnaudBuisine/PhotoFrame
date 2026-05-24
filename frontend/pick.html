@@ -212,10 +212,12 @@
             The slideshow uses photos downloaded to this Mac (not live Google links).
             If images fail to show, open Google Photos below and select your photos again —
             PhotoFrame will cache them locally (you can select many in one session).
+            Videos are not supported. If you select any, they won't be kept in the selection nor downloaded.
         </p>
         <div class="toolbar">
             <button type="button" id="pickBtn">Add photos from Google Photos</button>
             <button type="button" id="reopenPickBtn" class="secondary" disabled>Open picker window again</button>
+            <button type="button" id="downloadMissingBtn" class="secondary" disabled>Download missing to this Mac</button>
             <button type="button" id="removeAllBtn" class="danger" disabled>Remove all</button>
         </div>
         <div id="status"></div>
@@ -239,6 +241,7 @@
         'use strict';
         var pickBtn = document.getElementById('pickBtn');
         var reopenPickBtn = document.getElementById('reopenPickBtn');
+        var downloadMissingBtn = document.getElementById('downloadMissingBtn');
         var removeAllBtn = document.getElementById('removeAllBtn');
         var statusEl = document.getElementById('status');
         var summaryEl = document.getElementById('summary');
@@ -456,6 +459,7 @@
                 summaryEl.innerHTML = '<strong>' + (data.photoCount || 0) + '</strong> photo(s) in slideshow selection'
                     + ' (<strong>' + (data.cachedCount || 0) + '</strong> downloaded to this Mac).';
                 removeAllBtn.disabled = !(data.photoCount > 0);
+                downloadMissingBtn.disabled = !(data.photoCount > 0 && (data.cachedCount || 0) < data.photoCount);
                 if (!data.items || data.items.length === 0) {
                     gridEl.innerHTML = '<p class="empty">No photos yet. Use “Add photos from Google Photos”.</p>';
                     return;
@@ -527,6 +531,69 @@
             }
         }
 
+        function videoSkippedSuffix(count) {
+            count = count || 0;
+            if (count <= 0) {
+                return '';
+            }
+            if (count === 1) {
+                return ' 1 video was skipped (videos are not supported).';
+            }
+            return ' ' + count + ' videos were skipped (videos are not supported).';
+        }
+
+        function downloadMissingFromSelection(prefixMsg, onDone, skippedVideos) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/photos/google/picked', true);
+            xhr.onreadystatechange = function() {
+                var data;
+                var toCache;
+                var i;
+                var item;
+                if (xhr.readyState !== 4) {
+                    return;
+                }
+                if (xhr.status !== 200 || !xhr.responseText) {
+                    setStatus(parseError(xhr, 'Could not check which photos need downloading.'), true);
+                    if (onDone) {
+                        onDone();
+                    }
+                    return;
+                }
+                try {
+                    data = JSON.parse(xhr.responseText);
+                } catch (e4) {
+                    setStatus('Could not read selection from server.', true);
+                    if (onDone) {
+                        onDone();
+                    }
+                    return;
+                }
+                toCache = [];
+                if (data.items) {
+                    for (i = 0; i < data.items.length; i++) {
+                        item = data.items[i];
+                        if (!item.cached) {
+                            toCache.push({ id: item.id, filename: item.filename || item.id });
+                        }
+                    }
+                }
+                if (toCache.length > 0) {
+                    setStatus((prefixMsg || 'Photos updated.') + ' Downloading ' + toCache.length
+                        + ' photo(s) to this Mac…', false);
+                    downloadToCache(toCache, 0, 0, [], onDone || loadSelection, skippedVideos);
+                    return;
+                }
+                setStatus((prefixMsg || 'Photos updated.') + videoSkippedSuffix(skippedVideos), false);
+                if (onDone) {
+                    onDone();
+                } else {
+                    loadSelection();
+                }
+            };
+            xhr.send(null);
+        }
+
         function importSession(sessionId) {
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/photos/google/picker/session/' + encodeURIComponent(sessionId) + '/import', true);
@@ -548,13 +615,73 @@
                         return;
                     }
                     if (data.success) {
-                        setStatus(data.message || 'Photos updated.', false);
-                        loadSelection();
+                        var skippedVideos = data.skippedVideos || 0;
+                        if (data.toCache && data.toCache.length > 0) {
+                            setStatus((data.message || 'Photos updated.') + ' Downloading to this Mac…', false);
+                            downloadToCache(data.toCache, 0, 0, [], function() {
+                                loadSelection();
+                            }, skippedVideos);
+                        } else {
+                            downloadMissingFromSelection(data.message || 'Photos updated.', loadSelection, skippedVideos);
+                        }
                         return;
                     }
                 }
                 setStatus(parseError(xhr, 'Import failed.'), true);
                 loadSelection();
+            };
+            xhr.send(null);
+        }
+
+        function downloadToCache(items, index, okCount, errors, onDone, skippedVideos) {
+            var item;
+            var label;
+            var xhr;
+            var suffix = videoSkippedSuffix(skippedVideos);
+            if (index >= items.length) {
+                var msg;
+                if (errors.length === 0) {
+                    msg = okCount === 0
+                        ? 'All photos were already on this Mac.'
+                        : 'Download complete: ' + okCount + ' photo(s) saved to this Mac for the slideshow.';
+                } else if (okCount > 0) {
+                    msg = 'Downloaded ' + okCount + ' of ' + items.length + ' photo(s). '
+                        + errors.length + ' failed: ' + errors.join('; ');
+                } else {
+                    msg = 'Download failed: ' + errors.join('; ');
+                }
+                setStatus(msg + suffix, errors.length > 0);
+                if (onDone) {
+                    onDone();
+                }
+                return;
+            }
+            item = items[index];
+            label = item.filename || item.id;
+            setStatus('Downloading ' + (index + 1) + ' of ' + items.length + ': ' + label + '…', false);
+            xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/photos/google/cache/' + encodeURIComponent(item.id), true);
+            xhr.onreadystatechange = function() {
+                var data;
+                if (xhr.readyState !== 4) {
+                    return;
+                }
+                if (xhr.status === 200 && xhr.responseText) {
+                    try {
+                        data = JSON.parse(xhr.responseText);
+                        if (data.success) {
+                            if (data.newlyCached) {
+                                okCount++;
+                            }
+                            downloadToCache(items, index + 1, okCount, errors, onDone, skippedVideos);
+                            return;
+                        }
+                    } catch (e3) {
+                        /* fall through to error */
+                    }
+                }
+                errors.push(label + ' — ' + parseError(xhr, 'download failed'));
+                downloadToCache(items, index + 1, okCount, errors, onDone, skippedVideos);
             };
             xhr.send(null);
         }
@@ -651,8 +778,16 @@
             xhr.send(null);
         }
 
+        function downloadMissingNow() {
+            downloadMissingBtn.disabled = true;
+            downloadMissingFromSelection('Downloading missing photos.', function() {
+                loadSelection();
+            });
+        }
+
         pickBtn.addEventListener('click', startPick, false);
         reopenPickBtn.addEventListener('click', reopenPicker, false);
+        downloadMissingBtn.addEventListener('click', downloadMissingNow, false);
         removeAllBtn.addEventListener('click', removeAll, false);
         saveLayoutBtn.addEventListener('click', saveLayoutSettings, false);
         thumbSizeSlider.addEventListener('input', onThumbSizeChange, false);
