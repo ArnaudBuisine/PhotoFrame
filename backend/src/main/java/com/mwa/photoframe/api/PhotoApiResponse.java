@@ -10,7 +10,7 @@ import java.util.Map;
 
 public final class PhotoApiResponse {
 
-    public static final String PICK_PAGE_PATH = "/pick.html";
+    public static final String PICK_PAGE_PATH = "/myphotoframe.html";
 
     private PhotoApiResponse() {
     }

@@ -6,7 +6,7 @@ Full-screen photo slideshow for old browsers (including Safari on iPad 1). Java 
 
 ## Features
 
-- Display one photo at a time, full screen or sized with **width**, **height**, and **position** in pixels (editable on `/pick.html`; photo fits inside the box, aspect ratio preserved)
+- Display one photo at a time, full screen or sized with **width**, **height**, and **position** in pixels (editable on `/myphotoframe.html`; photo fits inside the box, aspect ratio preserved)
 - **Timer** advances to the next image (interval in seconds, URL parameter)
 - **Click or tap** the image to show the next photo immediately
 - Image source: **local folder** on disk or **Google Photos** (picker selection)
@@ -26,13 +26,13 @@ Open: **http://localhost:8082/** (query parameters on `/` are preserved; you can
 
 Put JPEG/PNG/GIF/HEIC files in `photoframe/images/`. HEIC files are converted to JPEG when served (pure Java via Openize HEIC), so older browsers can display iPhone photos.
 
-## Slideshow layout (`/pick.html`)
+## Slideshow layout (`/myphotoframe.html`)
 
-On **pick.html**, use **Slideshow display** to set width, height, position (X, Y) in **pixels**, and **interval** (seconds between photos). The image is scaled to fit inside that rectangle without cropping. Use **0** for width or height to fill the full window on that axis. Values are saved to `slideshow-display.json`. The slideshow reloads settings on each photo and every 15 seconds.
+On **myphotoframe.html**, use **Slideshow display** to set width, height, position (X, Y) in **pixels**, and **interval** (seconds between photos). The image is scaled to fit inside that rectangle without cropping. Use **0** for width or height to fill the full window on that axis. Values are saved to `slideshow-display.json`. The slideshow reloads settings on each photo and every 15 seconds.
 
 ## URL parameters (slideshow only)
 
-Layout and timer interval are **not** set from the URL (except optional `interval` override) — use **pick.html** or `slideshow-display.json`.
+Layout and timer interval are **not** set from the URL (except optional `interval` override) — use **myphotoframe.html** or `slideshow-display.json`.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -69,15 +69,15 @@ http://localhost:8082/?interval=60&folder=./images
 
 ### Choose photos
 
-Open **http://localhost:8082/pick.html** (or `/pick`):
+Open **http://localhost:8082/myphotoframe.html** (or `/myphotoframe`; `/pick` and `/pick.html` still work):
 
 1. Click **Add photos from Google Photos** (opens Google’s picker in a separate window).
 2. Select photos from your library (search by date, filename, etc.).
 3. When done, PhotoFrame appends new picks to `google-photos-picked.json` and the slideshow uses it.
 
-Google’s picker **cannot** pre-check photos you already chose on PhotoFrame; remove unwanted photos on `/pick`.
+Google’s picker **cannot** pre-check photos you already chose on PhotoFrame; remove unwanted photos on `/myphotoframe`.
 
-Re-open `/pick` to add more photos, remove individual photos, or clear all.
+Re-open `/myphotoframe` to add more photos, remove individual photos, or clear all.
 
 The slideshow shows clear errors when something is wrong (0 images, auth), with a link to the pick page.
 
@@ -104,6 +104,6 @@ Images are proxied through the server (`/api/photos/serve/{id}`) so the browser 
 ```
 photoframe/
   backend/     Spring Boot (port 8082)
-  frontend/    index.html (ES5 slideshow), pick.html
+  frontend/    index.html (ES5 slideshow), myphotoframe.html
   images/      Local photos folder
 ```

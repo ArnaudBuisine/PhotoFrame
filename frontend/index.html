@@ -212,7 +212,7 @@
                 code = parts.length > 0 ? parts[0] : '';
                 msg = parts.length > 1 ? trimString(parts.slice(1).join(':')) : text;
                 if (code === 'NO_IMAGES') {
-                    pickLink = ' <a href="/pick.html">Choose photos</a>';
+                    pickLink = ' <a href="/myphotoframe.html">Choose photos</a>';
                     return msg + pickLink;
                 }
                 if (code === 'AUTH_FAILED' || code === 'AUTH_CONFIG') {
@@ -338,7 +338,7 @@
         }
 
         function onPhotoError() {
-            setMessage('Photo not on this Mac yet — open /pick.html, add from Google Photos, and select your photos to download them. Loading next…', true);
+            setMessage('Photo not on this Mac yet — open /myphotoframe.html, add from Google Photos, and select your photos to download them. Loading next…', true);
             scheduleTimer();
             setTimeout(function() {
                 loadNextPhoto(false);

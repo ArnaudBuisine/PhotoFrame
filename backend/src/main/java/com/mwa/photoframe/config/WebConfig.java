@@ -19,6 +19,8 @@ public class WebConfig implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         // Forward (not redirect) so ?interval= and other query params are preserved.
         registry.addViewController("/").setViewName("forward:/index.html");
-        registry.addViewController("/pick").setViewName("forward:/pick.html");
+        registry.addViewController("/myphotoframe").setViewName("forward:/myphotoframe.html");
+        registry.addViewController("/pick").setViewName("forward:/myphotoframe.html");
+        registry.addViewController("/pick.html").setViewName("forward:/myphotoframe.html");
     }
 }
