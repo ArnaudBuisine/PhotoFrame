@@ -6,7 +6,7 @@ import com.mwa.photoframe.service.SlideshowDisplaySettingsService;
 import com.mwa.photoframe.source.HeicImageConverter;
 import com.mwa.photoframe.source.PhotoEntry;
 import com.mwa.photoframe.source.SlideshowDisplaySettings;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;

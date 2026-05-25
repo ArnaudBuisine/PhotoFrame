@@ -134,8 +134,8 @@ public class SlideshowDisplaySettings {
         if (value == null) {
             return fallback;
         }
-        if (value instanceof Boolean bool) {
-            return bool;
+        if (value instanceof Boolean) {
+            return (Boolean) value;
         }
         String text = String.valueOf(value).trim();
         if ("true".equalsIgnoreCase(text) || "1".equals(text) || "yes".equalsIgnoreCase(text)) {
@@ -151,8 +151,8 @@ public class SlideshowDisplaySettings {
         if (value == null) {
             return fallback;
         }
-        if (value instanceof Number number) {
-            return number.doubleValue();
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
         }
         try {
             return Double.parseDouble(String.valueOf(value).trim());
@@ -165,8 +165,8 @@ public class SlideshowDisplaySettings {
         if (value == null) {
             return fallback;
         }
-        if (value instanceof Number number) {
-            return number.intValue();
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
         }
         try {
             return Integer.parseInt(String.valueOf(value).trim());

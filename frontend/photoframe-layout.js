@@ -12,6 +12,7 @@
     var DEFAULT_INTERVAL_SECONDS = 5;
     var MIN_INTERVAL_SECONDS = 1;
     var MAX_INTERVAL_SECONDS = 86400;
+    var REQUEST_TIMEOUT_MS = 30000;
 
     var DEFAULTS = {
         width: 0,
@@ -289,8 +290,20 @@
 
     function load(callback) {
         var xhr;
+        var done = false;
+        var watchdogId;
+        function finish(settings) {
+            if (done) {
+                return;
+            }
+            done = true;
+            if (watchdogId) {
+                clearTimeout(watchdogId);
+            }
+            callback(settings);
+        }
         if (!global.XMLHttpRequest) {
-            callback(loadLocal());
+            finish(loadLocal());
             return;
         }
         xhr = new XMLHttpRequest();
@@ -300,15 +313,24 @@
                 return;
             }
             if (xhr.status === 200) {
-                callback(saveLocal(parseResponse(xhr.responseText)));
+                finish(saveLocal(parseResponse(xhr.responseText)));
                 return;
             }
-            callback(loadLocal());
+            finish(loadLocal());
         };
+        watchdogId = setTimeout(function() {
+            if (done) {
+                return;
+            }
+            try {
+                xhr.abort();
+            } catch (eAbort) {}
+            finish(loadLocal());
+        }, REQUEST_TIMEOUT_MS);
         try {
             xhr.send(null);
         } catch (e4) {
-            callback(loadLocal());
+            finish(loadLocal());
         }
     }
 

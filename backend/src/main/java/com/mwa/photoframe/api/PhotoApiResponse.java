@@ -31,12 +31,20 @@ public final class PhotoApiResponse {
     }
 
     public static HttpStatus statusFor(PhotoErrorCode code) {
-        return switch (code) {
-            case AUTH_CONFIG, AUTH_FAILED -> HttpStatus.UNAUTHORIZED;
-            case NO_IMAGES, PICKER_NOT_READY -> HttpStatus.SERVICE_UNAVAILABLE;
-            case PICKER_SESSION_FAILED, GOOGLE_API_ERROR, LOCAL_FOLDER_MISSING, UNKNOWN ->
-                    HttpStatus.INTERNAL_SERVER_ERROR;
-        };
+        switch (code) {
+            case AUTH_CONFIG:
+            case AUTH_FAILED:
+                return HttpStatus.UNAUTHORIZED;
+            case NO_IMAGES:
+            case PICKER_NOT_READY:
+                return HttpStatus.SERVICE_UNAVAILABLE;
+            case PICKER_SESSION_FAILED:
+            case GOOGLE_API_ERROR:
+            case LOCAL_FOLDER_MISSING:
+            case UNKNOWN:
+            default:
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
     }
 
     public static boolean isPlainFormat(String format) {

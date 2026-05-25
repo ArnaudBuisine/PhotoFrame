@@ -3,7 +3,7 @@ package com.mwa.photoframe.controller;
 
 import com.mwa.photoframe.api.PhotoApiResponse;
 import com.mwa.photoframe.api.PhotoFrameException;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 

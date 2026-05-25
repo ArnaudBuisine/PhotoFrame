@@ -115,6 +115,7 @@
         var layoutSettings = null;
         var layoutPollTimerId = null;
         var LAYOUT_POLL_MS = 15000;
+        var REQUEST_TIMEOUT_MS = 30000;
         var cursorHidden = false;
         var cursorHideDelayMs = 3000;
         var cursorHiddenClass = 'cursor-hidden';
@@ -278,9 +279,6 @@
         function refreshLayoutAndApply(done) {
             refreshLayoutSettings(function() {
                 applySize();
-                if (timerId !== null) {
-                    scheduleTimer();
-                }
                 if (typeof done === 'function') {
                     done();
                 }
@@ -365,6 +363,28 @@
         function loadNextPhoto(fromClick) {
             var xhr;
             var url;
+            var completed = false;
+            var watchdogId = null;
+
+            function finishRequest(ok, imageUrl) {
+                if (completed) {
+                    return;
+                }
+                completed = true;
+                if (watchdogId !== null) {
+                    clearTimeout(watchdogId);
+                    watchdogId = null;
+                }
+                if (ok && imageUrl) {
+                    photoEl.src = imageUrl;
+                    setMessage(slideshowStatusMessage(), false);
+                    refreshLayoutSettings(function() {
+                        applySize();
+                    });
+                }
+                scheduleTimer();
+            }
+
             if (fromClick && timerId !== null) {
                 clearTimeout(timerId);
                 timerId = null;
@@ -387,23 +407,29 @@
                     if (xhr.status === 200 && xhr.responseText) {
                         imageUrl = trimString(xhr.responseText);
                         if (imageUrl.indexOf('/api/photos/serve/') === 0) {
-                            refreshLayoutAndApply(function() {
-                                photoEl.src = imageUrl;
-                                setMessage(slideshowStatusMessage(), false);
-                                scheduleTimer();
-                            });
+                            finishRequest(true, imageUrl);
                             return;
                         }
                     }
                     setMessage(formatApiError(xhr.status, xhr.responseText), true);
-                    scheduleTimer();
+                    finishRequest(false, null);
                 }
             };
+            watchdogId = setTimeout(function() {
+                if (completed) {
+                    return;
+                }
+                try {
+                    xhr.abort();
+                } catch (abortErr) {}
+                setMessage('Server slow or unreachable — retrying…', true);
+                finishRequest(false, null);
+            }, REQUEST_TIMEOUT_MS);
             try {
                 xhr.send(null);
             } catch (err) {
                 setMessage('Network error — is the PhotoFrame server running?', true);
-                scheduleTimer();
+                finishRequest(false, null);
             }
         }
 
