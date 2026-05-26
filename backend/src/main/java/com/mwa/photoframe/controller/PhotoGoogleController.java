@@ -5,6 +5,8 @@ import com.mwa.photoframe.api.PhotoErrorCode;
 import com.mwa.photoframe.api.PhotoFrameException;
 import com.mwa.photoframe.service.GooglePhotosPickerService;
 import com.mwa.photoframe.service.PhotoCatalogService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +21,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/photos/google")
 public class PhotoGoogleController {
+
+    private static final Logger log = LoggerFactory.getLogger(PhotoGoogleController.class);
 
     private final GooglePhotosPickerService pickerService;
     private final PhotoCatalogService catalogService;
@@ -61,6 +65,7 @@ public class PhotoGoogleController {
 
     @PostMapping("/picker/session")
     public ResponseEntity<Map<String, Object>> createPickerSession() throws Exception {
+        log.debug("REST POST /google/picker/session");
         return ResponseEntity.ok(pickerService.createSession());
     }
 
@@ -71,6 +76,7 @@ public class PhotoGoogleController {
 
     @PostMapping("/picker/session/{sessionId}/import")
     public ResponseEntity<Map<String, Object>> importPickerSession(@PathVariable String sessionId) throws Exception {
+        log.debug("REST POST /google/picker/session/{}/import", sessionId);
         Map<String, Object> body = pickerService.importSession(sessionId);
         catalogService.invalidateCatalog();
         return ResponseEntity.ok(body);

@@ -10,4 +10,5 @@ if [[ ! -f "$JAR" ]]; then
   exit 1
 fi
 cd "$ROOT"
+export LOG_LEVEL="${LOG_LEVEL:-TRACE}"
 exec java -jar "$JAR" "$@"

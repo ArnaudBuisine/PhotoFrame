@@ -22,6 +22,8 @@ import com.mwa.photoframe.config.PhotoFrameConfig;
 import com.mwa.photoframe.source.GooglePhotosClientFactory;
 import com.mwa.photoframe.source.GooglePhotosCredentials;
 import com.mwa.photoframe.source.GooglePhotosPickedStore;
+import com.mwa.photoframe.util.GoogleHttpTrace;
+import com.mwa.photoframe.util.PhotoFrameTraceLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -54,6 +56,7 @@ public class GooglePhotosPickerService {
     }
 
     public Map<String, Object> createSession() throws Exception {
+        log.debug("Picker createSession start");
         int existingCount = GooglePhotosPickedStore.count(resolvePickedPath());
         GoogleCredential credential = credential();
         NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
@@ -65,9 +68,9 @@ public class GooglePhotosPickerService {
             String json = MAPPER.writeValueAsString(requestBody);
             ByteArrayContent content = new ByteArrayContent(
                     "application/json", json.getBytes(StandardCharsets.UTF_8));
-            response = transport.createRequestFactory(credential)
-                    .buildPostRequest(new GenericUrl(PICKER_BASE + "sessions"), content)
-                    .execute();
+            response = GoogleHttpTrace.executePost(
+                    log, "picker-create-session", transport, credential,
+                    new GenericUrl(PICKER_BASE + "sessions"), content);
         } catch (HttpResponseException ex) {
             throw GooglePickerApiErrors.toPhotoFrameException(ex);
         }
@@ -93,13 +96,14 @@ public class GooglePhotosPickerService {
     }
 
     public Map<String, Object> getSession(String sessionId) throws Exception {
+        log.debug("Picker getSession sessionId={}", sessionId);
         GoogleCredential credential = credential();
         NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
         HttpResponse response;
         try {
-            response = transport.createRequestFactory(credential)
-                    .buildGetRequest(new GenericUrl(PICKER_BASE + "sessions/" + sessionId))
-                    .execute();
+            response = GoogleHttpTrace.executeGet(
+                    log, "picker-get-session", transport, credential,
+                    new GenericUrl(PICKER_BASE + "sessions/" + sessionId));
         } catch (HttpResponseException ex) {
             throw GooglePickerApiErrors.toPhotoFrameException(ex);
         }
@@ -119,6 +123,7 @@ public class GooglePhotosPickerService {
     }
 
     public Map<String, Object> importSession(String sessionId) throws Exception {
+        log.debug("Picker importSession sessionId={}", sessionId);
         Map<String, Object> status = getSession(sessionId);
         if (!Boolean.TRUE.equals(status.get("mediaItemsSet"))) {
             throw new PhotoFrameException(
@@ -287,9 +292,8 @@ public class GooglePhotosPickerService {
             }
             HttpResponse response;
             try {
-                response = transport.createRequestFactory(credential)
-                        .buildGetRequest(url)
-                        .execute();
+                response = GoogleHttpTrace.executeGet(
+                        log, "picker-list-media", transport, credential, url);
             } catch (HttpResponseException ex) {
                 throw GooglePickerApiErrors.toPhotoFrameException(ex);
             }
@@ -347,11 +351,11 @@ public class GooglePhotosPickerService {
         try {
             GoogleCredential credential = credential();
             NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
-            transport.createRequestFactory(credential)
-                    .buildDeleteRequest(new GenericUrl(PICKER_BASE + "sessions/" + sessionId))
-                    .execute();
+            GoogleHttpTrace.executeDelete(
+                    log, "picker-delete-session", transport, credential,
+                    new GenericUrl(PICKER_BASE + "sessions/" + sessionId));
         } catch (Exception ex) {
-            log.debug("Picker session delete ignored: {}", ex.getMessage());
+            log.debug("Picker session delete ignored sessionId={}: {}", sessionId, ex.getMessage());
         }
     }
 
@@ -371,6 +375,7 @@ public class GooglePhotosPickerService {
                 path = projectRoot.resolve(path).normalize();
             }
         }
+        PhotoFrameTraceLog.tracePath(log, "picker-picked-path", path);
         return path;
     }
 

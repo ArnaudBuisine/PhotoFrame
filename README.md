@@ -53,6 +53,8 @@ cp google-photos-credentials.properties.template google-photos-credentials.prope
 
 See `README-DEPLOY.txt` inside the archive.
 
+Logging uses the same Logback setup as BookForge (`logback-spring.xml`, `logs/backend/photoframe.log`, rotation, `LOG_LEVEL` env var). After an unexpected stop, run `./scripts/manage-logs.sh why-stopped` or `grep ERROR logs/backend/photoframe.log`.
+
 ## Deploy (JAR only)
 
 ```bash

@@ -4,6 +4,7 @@ package com.mwa.photoframe.source;
 
 import openize.heic.decoder.HeicImage;
 import openize.heic.decoder.PixelFormat;
+import com.mwa.photoframe.util.PhotoFrameTraceLog;
 import openize.io.IOFileStream;
 import openize.io.IOMode;
 import org.slf4j.Logger;
@@ -57,6 +58,8 @@ public final class HeicImageConverter {
 
     /** Normalize downloaded bytes to JPEG for the local cache. */
     public static byte[] toCacheJpeg(byte[] bytes, String mime, String label) throws IOException {
+        log.debug("HEIC toCacheJpeg label={} mime={} inputBytes={}", safeLabel(label), mime,
+                bytes != null ? bytes.length : 0);
         if (bytes == null || bytes.length == 0) {
             throw new IOException("Empty image data for " + safeLabel(label));
         }
@@ -98,15 +101,25 @@ public final class HeicImageConverter {
 
     public static byte[] toJpeg(byte[] heicBytes) throws IOException {
         Path tmpIn = Files.createTempFile("photoframe-heic-in-", ".heic");
+        PhotoFrameTraceLog.tracePath(log, "heic-temp-in", tmpIn);
         try {
             Files.write(tmpIn, heicBytes);
+            PhotoFrameTraceLog.logWrite(log, tmpIn, heicBytes.length);
             return toJpeg(tmpIn);
+        } catch (IOException ex) {
+            PhotoFrameTraceLog.logIoFailure(log, "heic-temp-write", tmpIn, ex);
+            throw ex;
         } finally {
-            Files.deleteIfExists(tmpIn);
+            try {
+                Files.deleteIfExists(tmpIn);
+            } catch (IOException ex) {
+                log.trace("HEIC temp delete ignored: {}", ex.getMessage());
+            }
         }
     }
 
     public static byte[] toJpeg(Path heicFile) throws IOException {
+        PhotoFrameTraceLog.debugPath(log, "heic-convert", heicFile);
         try (IOFileStream fs = new IOFileStream(heicFile.toAbsolutePath().toString(), IOMode.READ)) {
             HeicImage image = HeicImage.load(fs);
             int width = (int) image.getWidth();
@@ -128,8 +141,10 @@ public final class HeicImageConverter {
             log.debug("Converted {} to JPEG ({} bytes)", heicFile.getFileName(), jpeg.length);
             return jpeg;
         } catch (IOException e) {
+            PhotoFrameTraceLog.logIoFailure(log, "heic-convert", heicFile, e);
             throw e;
         } catch (Exception e) {
+            log.error("HEIC conversion failed path={} reason={}", heicFile.toAbsolutePath(), e.getMessage(), e);
             throw new IOException("HEIC conversion failed for " + heicFile.getFileName() + ": " + e.getMessage(), e);
         }
     }

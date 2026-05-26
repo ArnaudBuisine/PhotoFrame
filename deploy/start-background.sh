@@ -12,7 +12,8 @@ fi
 
 JAVA_BIN="${JAVA_BIN:-/volume1/java/current/bin/java}"
 PID_FILE="$DIR/photoframe.pid"
-LOG_FILE="$DIR/photoframe.log"
+STDOUT_LOG="$DIR/logs/nohup.stdout.log"
+export LOG_LEVEL="${LOG_LEVEL:-TRACE}"
 
 if [[ ! -x "$JAVA_BIN" ]]; then
   echo "Java not found: $JAVA_BIN" >&2
@@ -24,6 +25,8 @@ if [[ ! -f "$DIR/google-photos-credentials.properties" ]]; then
   exit 1
 fi
 
+mkdir -p "$DIR/logs/backend" "$DIR/logs/archive"
+
 if [[ -f "$PID_FILE" ]]; then
   OLD_PID="$(cat "$PID_FILE")"
   if kill -0 "$OLD_PID" 2>/dev/null; then
@@ -32,7 +35,18 @@ if [[ -f "$PID_FILE" ]]; then
   fi
 fi
 
-nohup "$JAVA_BIN" -jar "$DIR/photoframe.jar" >> "$LOG_FILE" 2>&1 &
+echo "Starting PhotoFrame (LOG_LEVEL=$LOG_LEVEL)..."
+nohup "$JAVA_BIN" -jar "$DIR/photoframe.jar" >> "$STDOUT_LOG" 2>&1 &
 echo $! > "$PID_FILE"
+sleep 2
+if ! kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+  echo "PhotoFrame failed to start. Check:" >&2
+  echo "  $STDOUT_LOG" >&2
+  echo "  $DIR/logs/backend/error.log" >&2
+  exit 1
+fi
 echo "PhotoFrame started PID $(cat "$PID_FILE")"
-echo "Log: $LOG_FILE"
+echo "Main log:  $DIR/logs/backend/photoframe.log"
+echo "Errors:    $DIR/logs/backend/error.log"
+echo "Stdout:    $STDOUT_LOG"
+echo "Slideshow: http://$(hostname -i 2>/dev/null | awk '{print $1}'):8082/"

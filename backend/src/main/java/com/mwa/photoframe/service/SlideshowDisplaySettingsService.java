@@ -5,6 +5,8 @@ package com.mwa.photoframe.service;
 import com.mwa.photoframe.config.PhotoFrameConfig;
 import com.mwa.photoframe.source.SlideshowDisplaySettings;
 import com.mwa.photoframe.source.SlideshowDisplaySettingsStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -14,6 +16,8 @@ import java.nio.file.Paths;
 @Service
 public class SlideshowDisplaySettingsService {
 
+    private static final Logger log = LoggerFactory.getLogger(SlideshowDisplaySettingsService.class);
+
     private final PhotoFrameConfig config;
 
     public SlideshowDisplaySettingsService(PhotoFrameConfig config) {
@@ -21,10 +25,12 @@ public class SlideshowDisplaySettingsService {
     }
 
     public SlideshowDisplaySettings get() throws IOException {
+        log.debug("Display settings load");
         return SlideshowDisplaySettingsStore.load(resolvePath(), config.getDefaultTimerSeconds());
     }
 
     public SlideshowDisplaySettings save(SlideshowDisplaySettings settings) throws IOException {
+        log.debug("Display settings save");
         return SlideshowDisplaySettingsStore.save(resolvePath(), settings);
     }
 

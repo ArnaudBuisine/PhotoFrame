@@ -13,7 +13,11 @@ fi
 PID="$(cat "$PID_FILE")"
 if kill -0 "$PID" 2>/dev/null; then
   kill "$PID"
-  echo "Stopped PhotoFrame (PID $PID)"
+  sleep 2
+  if kill -0 "$PID" 2>/dev/null; then
+    kill -9 "$PID" 2>/dev/null || true
+  fi
+  echo "Stopped PhotoFrame (PID $PID) — see logs/backend/photoframe.log for shutdown lines"
 else
   echo "Process $PID not running."
 fi

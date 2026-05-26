@@ -33,6 +33,7 @@ public class GooglePhotosPickedPhotoSource implements PhotoSource, GooglePhotosC
 
     @Override
     public List<PhotoEntry> loadCatalog() throws Exception {
+        log.debug("Google picked catalog load path={}", pickedFile.toAbsolutePath());
         List<GooglePhotosPickedStore.StoredPickedItem> stored = GooglePhotosPickedStore.load(pickedFile);
         List<PhotoEntry> entries = new ArrayList<>();
         for (GooglePhotosPickedStore.StoredPickedItem item : stored) {
@@ -49,6 +50,7 @@ public class GooglePhotosPickedPhotoSource implements PhotoSource, GooglePhotosC
     @Override
     public synchronized GoogleCredential getCredential() throws Exception {
         if (googleCredential == null) {
+            log.debug("Google OAuth credential lazy init");
             googleCredential = GooglePhotosClientFactory.buildCredential(credentials);
         }
         return googleCredential;

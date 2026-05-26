@@ -7,6 +7,8 @@ import com.mwa.photoframe.source.HeicImageConverter;
 import com.mwa.photoframe.source.PhotoEntry;
 import com.mwa.photoframe.source.SlideshowDisplaySettings;
 import javax.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,6 +28,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/photos")
 public class PhotoController {
+
+    private static final Logger log = LoggerFactory.getLogger(PhotoController.class);
 
     private final PhotoCatalogService catalogService;
     private final SlideshowDisplaySettingsService displaySettingsService;
@@ -47,6 +51,7 @@ public class PhotoController {
             HttpServletRequest request) throws Exception {
 
         PhotoEntry entry = catalogService.nextPhoto(folder);
+        log.debug("REST /next id={} mime={}", entry.getId(), entry.getMimeType());
         String imageUrl = buildImageUrl(request, entry.getId(), folder);
 
         if ("text".equalsIgnoreCase(format) || "plain".equalsIgnoreCase(format)) {
@@ -71,8 +76,10 @@ public class PhotoController {
         catalogService.ensureCatalog(folder);
         PhotoEntry entry = catalogService.findById(id);
         if (entry == null) {
+            log.debug("REST /serve/{} not found in catalog", id);
             return ResponseEntity.notFound().build();
         }
+        log.debug("REST /serve/{} source={}", id, entry.getSourceType());
         Resource resource = catalogService.loadImageResource(entry);
         String mime = entry.getMimeType() != null ? entry.getMimeType() : MediaType.IMAGE_JPEG_VALUE;
         if (HeicImageConverter.isHeicMime(mime)

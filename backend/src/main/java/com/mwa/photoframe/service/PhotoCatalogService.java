@@ -20,6 +20,8 @@ import com.mwa.photoframe.source.HeicImageConverter;
 import com.mwa.photoframe.source.LocalFolderPhotoSource;
 import com.mwa.photoframe.source.PhotoEntry;
 import com.mwa.photoframe.source.PhotoSource;
+import com.mwa.photoframe.util.GoogleHttpTrace;
+import com.mwa.photoframe.util.PhotoFrameTraceLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
@@ -61,6 +63,7 @@ public class PhotoCatalogService {
     }
 
     public void invalidateCatalog() {
+        log.debug("Catalog invalidated (was {} photos)", catalog.size());
         loadedKey = "";
         catalog = Collections.emptyList();
         index.set(0);
@@ -71,8 +74,10 @@ public class PhotoCatalogService {
         String key = source + "|picked|"
                 + (folderParam != null ? folderParam : config.getLocalFolder());
         if (key.equals(loadedKey) && !catalog.isEmpty()) {
+            log.trace("Catalog cache hit key={} size={}", key, catalog.size());
             return;
         }
+        log.debug("Catalog load start source={} folderParam={}", source, folderParam);
         PhotoSource photoSource = buildSource(source, folderParam);
         List<PhotoEntry> loaded = photoSource.loadCatalog();
         if (loaded.isEmpty()) {
@@ -96,6 +101,7 @@ public class PhotoCatalogService {
     public PhotoEntry nextPhoto(String folderParam) throws Exception {
         ensureCatalog(folderParam);
         int i = index.getAndIncrement();
+        log.trace("Catalog next index={}/{}", i, catalog.size());
         if (i >= catalog.size()) {
             index.set(0);
             i = 0;
@@ -113,25 +119,32 @@ public class PhotoCatalogService {
     }
 
     public Resource loadImageResource(PhotoEntry entry) throws Exception {
+        log.debug("Load image id={} source={}", entry.getId(), entry.getSourceType());
         if (entry.isLocal()) {
             if (localSource == null) {
                 throw new IllegalStateException("Local source not initialized");
             }
             Path file = localSource.resolveFile(entry);
+            PhotoFrameTraceLog.tracePath(log, "serve-local", file);
             if (!Files.isRegularFile(file)) {
+                log.error("IO serve-local missing file path={}", file.toAbsolutePath());
                 throw new IllegalStateException("File not found: " + file);
             }
             if (HeicImageConverter.isHeicPath(file)) {
                 byte[] jpeg = HeicImageConverter.toJpeg(file);
+                log.debug("IO serve-local HEIC→JPEG path={} bytes={}", file.toAbsolutePath(), jpeg.length);
                 return new ByteArrayResource(jpeg);
             }
+            PhotoFrameTraceLog.debugPath(log, "serve-local", file);
             return new FileSystemResource(file);
         }
         if (entry.isGoogle()) {
             Path cached = imageCacheService.cachedFile(entry.getId());
             if (Files.isRegularFile(cached)) {
+                PhotoFrameTraceLog.debugPath(log, "serve-google-cache-hit", cached);
                 return new FileSystemResource(cached);
             }
+            log.debug("Google serve cache-miss id={} — fetching", entry.getId());
             if (googleCredentialProvider == null) {
                 throw new IllegalStateException("Google source not initialized");
             }
@@ -141,7 +154,7 @@ public class PhotoCatalogService {
             try {
                 GooglePhotosImageCache.saveJpeg(imageCacheService.cacheDir(), entry.getId(), imageBytes);
             } catch (IOException saveEx) {
-                log.warn("Could not write image cache for {}: {}", entry.getId(), saveEx.getMessage());
+                PhotoFrameTraceLog.logIoFailure(log, "serve-google-cache-write", cached, saveEx);
             }
             return new ByteArrayResource(imageBytes);
         }
@@ -154,9 +167,12 @@ public class PhotoCatalogService {
         HttpResponseException lastError = null;
         for (String url : googleFetchUrlCandidates(baseUrl, entry.getMimeType())) {
             try {
-                return executeGooglePhotoFetch(credentialProvider, url);
+                byte[] bytes = executeGooglePhotoFetch(credentialProvider, url);
+                log.debug("Google photo fetch OK id={} bytes={}", entry.getId(), bytes.length);
+                return bytes;
             } catch (HttpResponseException ex) {
                 lastError = ex;
+                log.debug("Google photo fetch attempt failed id={} status={}", entry.getId(), ex.getStatusCode());
                 if (ex.getStatusCode() != 403 && ex.getStatusCode() != 404) {
                     throw mapGooglePhotoFetchError(ex);
                 }
@@ -172,11 +188,12 @@ public class PhotoCatalogService {
             GooglePhotosCredentialProvider credentialProvider, String url) throws Exception {
         GoogleCredential credential = credentialProvider.getCredential();
         HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
-        HttpResponse response = transport.createRequestFactory(credential)
-                .buildGetRequest(new GenericUrl(url))
-                .execute();
+        HttpResponse response = GoogleHttpTrace.executeGet(
+                log, "google-photo-download", transport, credential, new GenericUrl(url));
         try (InputStream in = response.getContent()) {
-            return in.readAllBytes();
+            byte[] bytes = in.readAllBytes();
+            log.debug("Google photo download body bytes={}", bytes.length);
+            return bytes;
         }
     }
 
@@ -254,6 +271,7 @@ public class PhotoCatalogService {
             }
         }
         Path folder = resolveLocalFolder(folderParam);
+        PhotoFrameTraceLog.tracePath(log, "catalog-local-folder", folder);
         localSource = new LocalFolderPhotoSource(folder);
         googleCredentialProvider = null;
         return localSource;
@@ -262,6 +280,7 @@ public class PhotoCatalogService {
     private PhotoSource buildGoogleSource() throws Exception {
         GooglePhotosCredentials creds = googlePhotosService.loadCredentials();
         Path pickedPath = resolveProjectRelativePath(config.getGooglePickedFile());
+        PhotoFrameTraceLog.tracePath(log, "catalog-google-picked", pickedPath);
         GooglePhotosPickedPhotoSource picked = new GooglePhotosPickedPhotoSource(creds, pickedPath);
         googleCredentialProvider = picked;
         localSource = null;

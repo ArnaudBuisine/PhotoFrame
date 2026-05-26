@@ -10,6 +10,7 @@ import com.mwa.photoframe.source.GooglePhotosPickedPhotoSource;
 import com.mwa.photoframe.source.GooglePhotosPickedStore;
 import com.mwa.photoframe.source.HeicImageConverter;
 import com.mwa.photoframe.source.PhotoEntry;
+import com.mwa.photoframe.util.PhotoFrameTraceLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -50,13 +51,14 @@ public class GooglePhotosImageCacheService {
         if (item == null || item.id == null || item.id.isEmpty() || item.baseUrl == null) {
             throw new IllegalArgumentException("Photo metadata is incomplete.");
         }
+        log.debug("Cache download start id={}", item.id);
         String mime = item.mimeType != null ? item.mimeType : "image/jpeg";
         PhotoEntry entry = PhotoEntry.google(item.id, item.baseUrl, mime);
         byte[] bytes = PhotoCatalogService.fetchGooglePhotoBytes(entry, credentialProvider);
         String label = item.filename != null ? item.filename : item.id;
         bytes = HeicImageConverter.toCacheJpeg(bytes, mime, label);
         GooglePhotosImageCache.saveJpeg(cacheDir(), item.id, bytes);
-        log.debug("Cached Google photo {} ({} bytes)", item.id, bytes.length);
+        log.debug("Cache download OK id={} bytes={}", item.id, bytes.length);
     }
 
     /** Download one picked item to local cache. Returns false if already cached. */
@@ -65,6 +67,7 @@ public class GooglePhotosImageCacheService {
             throw new IllegalArgumentException("Missing photo id.");
         }
         if (isCached(item.id)) {
+            log.debug("Cache skip (already cached) id={}", item.id);
             return false;
         }
         GooglePhotosCredentials creds = googlePhotosService.loadCredentials();
@@ -91,11 +94,11 @@ public class GooglePhotosImageCacheService {
                     saveFromGoogle(item, provider);
                     cached++;
                 } catch (Exception ex) {
-                    log.warn("Could not cache photo {}: {}", item.id, ex.getMessage());
+                    log.warn("Could not cache photo {}: {}", item.id, ex.getMessage(), ex);
                 }
             }
         } catch (Exception ex) {
-            log.warn("Photo cache warm-up failed: {}", ex.getMessage());
+            log.warn("Photo cache warm-up failed: {}", ex.getMessage(), ex);
         }
         return cached;
     }
@@ -107,9 +110,10 @@ public class GooglePhotosImageCacheService {
 
     public void deleteCached(String mediaId) {
         try {
-            GooglePhotosImageCache.delete(cacheDir(), mediaId);
+            Path dir = cacheDir();
+            GooglePhotosImageCache.delete(dir, mediaId);
         } catch (Exception ex) {
-            log.debug("Cache delete ignored for {}: {}", mediaId, ex.getMessage());
+            log.warn("Cache delete failed id={}: {}", mediaId, ex.getMessage(), ex);
         }
     }
 
