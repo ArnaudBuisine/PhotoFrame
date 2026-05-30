@@ -10,6 +10,8 @@ public class SlideshowDisplaySettings {
     public static final String UNIT_PIXELS = "px";
     public static final int MIN_INTERVAL_SECONDS = 1;
     public static final int MAX_INTERVAL_SECONDS = 86400;
+    public static final double MIN_POSITION = -32_000;
+    public static final double MAX_POSITION = 32_000;
 
     private final double width;
     private final double height;
@@ -202,11 +204,11 @@ public class SlideshowDisplaySettings {
         if (Double.isNaN(value) || Double.isInfinite(value)) {
             return fallback;
         }
-        if (value < 0) {
-            return 0;
+        if (value < MIN_POSITION) {
+            return MIN_POSITION;
         }
-        if (value > 32_000) {
-            return 32_000;
+        if (value > MAX_POSITION) {
+            return MAX_POSITION;
         }
         return Math.round(value);
     }

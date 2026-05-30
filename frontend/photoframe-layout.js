@@ -93,9 +93,12 @@
         return n;
     }
 
+    var MIN_POSITION = -32000;
+    var MAX_POSITION = 32000;
+
     function clampPixel(value, fallback, maxValue) {
         var n = parseFloat(value, 10);
-        var cap = maxValue || 32000;
+        var cap = maxValue || MAX_POSITION;
         if (isNaN(n)) {
             return fallback;
         }
@@ -108,6 +111,20 @@
         return Math.round(n);
     }
 
+    function clampPosition(value, fallback) {
+        var n = parseFloat(value, 10);
+        if (isNaN(n)) {
+            return fallback;
+        }
+        if (n < MIN_POSITION) {
+            return MIN_POSITION;
+        }
+        if (n > MAX_POSITION) {
+            return MAX_POSITION;
+        }
+        return Math.round(n);
+    }
+
     function migratePercentToPx(settings) {
         var s = settings || {};
         var vw = viewportWidth();
@@ -115,8 +132,8 @@
         return {
             width: s.width > 0 ? clampPixel(s.width / 100 * vw, 0, 32000) : 0,
             height: s.height > 0 ? clampPixel(s.height / 100 * vh, 0, 32000) : 0,
-            x: clampPixel(s.x / 100 * vw, 0, 32000),
-            y: clampPixel(s.y / 100 * vh, 0, 32000),
+            x: clampPosition(s.x / 100 * vw, 0),
+            y: clampPosition(s.y / 100 * vh, 0),
             unit: UNIT_PIXELS
         };
     }
@@ -130,8 +147,8 @@
         return {
             width: clampPixel(s.width, DEFAULTS.width, 32000),
             height: clampPixel(s.height, DEFAULTS.height, 32000),
-            x: clampPixel(s.x, DEFAULTS.x, 32000),
-            y: clampPixel(s.y, DEFAULTS.y, 32000),
+            x: clampPosition(s.x, DEFAULTS.x),
+            y: clampPosition(s.y, DEFAULTS.y),
             intervalSeconds: clampInterval(s.intervalSeconds, DEFAULTS.intervalSeconds),
             showDisplayZone: !!s.showDisplayZone,
             unit: UNIT_PIXELS
@@ -184,7 +201,18 @@
         re = new RegExp('"' + field + '"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)');
         match = re.exec(text);
         if (match && match.length > 1) {
-            return clampPixel(match[1], fallback, 32000);
+            return clampPixel(match[1], fallback, MAX_POSITION);
+        }
+        return fallback;
+    }
+
+    function parsePositionFromJson(text, field, fallback) {
+        var re;
+        var match;
+        re = new RegExp('"' + field + '"\\s*:\\s*(-?[0-9]+(?:\\.[0-9]+)?)');
+        match = re.exec(text);
+        if (match && match.length > 1) {
+            return clampPosition(match[1], fallback);
         }
         return fallback;
     }
@@ -230,8 +258,8 @@
         return normalize({
             width: parseNumberFromJson(text, 'width', DEFAULTS.width),
             height: parseNumberFromJson(text, 'height', DEFAULTS.height),
-            x: parseNumberFromJson(text, 'x', DEFAULTS.x),
-            y: parseNumberFromJson(text, 'y', DEFAULTS.y),
+            x: parsePositionFromJson(text, 'x', DEFAULTS.x),
+            y: parsePositionFromJson(text, 'y', DEFAULTS.y),
             intervalSeconds: parseIntervalFromJson(text, DEFAULTS.intervalSeconds),
             showDisplayZone: parseBooleanFromJson(text, 'showDisplayZone', DEFAULTS.showDisplayZone),
             unit: parseUnitFromJson(text)
@@ -540,6 +568,7 @@
         syncStageViewport: syncStageViewport,
         bindSavedListener: bindSavedListener,
         clampPixel: clampPixel,
+        clampPosition: clampPosition,
         viewportWidth: viewportWidth,
         viewportHeight: viewportHeight
     };
