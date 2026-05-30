@@ -4,6 +4,8 @@
 
 Full-screen photo slideshow for old browsers (including Safari on iPad 1). Java backend + plain HTML/ES5 frontend.
 
+> **Branch `java11` (this branch):** Java 11 + Spring Boot 2.7 for Synology NAS. Active development is on **`main`** (Java 17 + Spring Boot 3). See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Features
 
 - Display one photo at a time, full screen or sized with **width**, **height**, and **position** in pixels (editable on `/myphotoframe.html`; photo fits inside the box, aspect ratio preserved)
@@ -39,12 +41,12 @@ Build a ready-to-install archive (JAR, scripts, templates, data folders):
 ./scripts/build-deploy-tar.sh
 ```
 
-Output: `dist/photoframe-deploy-1.0.0.tar.gz`
+Output: `dist/photoframe-deploy-1.0.0-java11.tar.gz`
 
-On Linux (Java 11+). The package `run.sh` uses **`/volume1/java/current/bin/java`** by default (edit `java.env` if needed):
+On Linux (**Java 11**). The package `run.sh` uses **`/volume1/java/current/bin/java`** by default (edit `java.env` if needed):
 
 ```bash
-tar xzf photoframe-deploy-1.0.0.tar.gz -C /volume1/photoframe
+tar xzf photoframe-deploy-1.0.0-java11.tar.gz -C /volume1/apps
 cd /volume1/photoframe/photoframe
 cp google-photos-credentials.properties.template google-photos-credentials.properties
 # edit google-photos-credentials.properties

@@ -1,7 +1,9 @@
-PhotoFrame deployment package (Linux)
-=====================================
+PhotoFrame deployment package (Linux) — Java 11 / java11 branch
+=============================================================
 
-Requirements: Java 11+. JDK: /volume1/java/current/bin/java (edit java.env).
+Build this archive from git branch java11 only (not main).
+
+Requirements: Java 11. JDK: /volume1/java/current/bin/java (edit java.env).
 
 Logging (same system as BookForge):
   logs/backend/photoframe.log   — main log
@@ -14,7 +16,7 @@ Logging (same system as BookForge):
 1. Extract (IMPORTANT — parent directory, not inside photoframe):
 
      cd /volume1/apps
-     tar xzf photoframe-deploy-1.0.0.tar.gz
+     tar xzf photoframe-deploy-1.0.0-java11.tar.gz
      cd photoframe
      ls -la start-background.sh run.sh stop.sh
 

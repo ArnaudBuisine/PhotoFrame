@@ -5,9 +5,10 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="1.0.0"
+ARCHIVE_SUFFIX="-java11"
 DIST="$ROOT/dist"
 STAGE="$DIST/photoframe"
-ARCHIVE="$DIST/photoframe-deploy-${VERSION}.tar.gz"
+ARCHIVE="$DIST/photoframe-deploy-${VERSION}${ARCHIVE_SUFFIX}.tar.gz"
 
 rm -rf "$DIST"
 mkdir -p "$STAGE/images" "$STAGE/google-photos-cache" "$STAGE/logs/backend" "$STAGE/logs/archive"
