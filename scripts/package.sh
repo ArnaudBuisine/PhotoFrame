@@ -4,6 +4,13 @@
 # Build executable PhotoFrame JAR (Java 21, Spring Boot 3 — main branch).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+STORAGE_LIB="$(cd "$ROOT/../storage-lib" 2>/dev/null && pwd || true)"
+if [[ -n "$STORAGE_LIB" && -f "$STORAGE_LIB/pom.xml" ]]; then
+  echo "Installing storage-lib from $STORAGE_LIB ..."
+  (cd "$STORAGE_LIB" && mvn -q install -DskipTests)
+else
+  echo "Note: ../storage-lib not found — ensure com.photoframe:storage-spring-boot-starter is in your local Maven repo." >&2
+fi
 cd "$ROOT/backend"
 mvn -q clean package -DskipTests
 JAR="$ROOT/backend/target/photoframe.jar"

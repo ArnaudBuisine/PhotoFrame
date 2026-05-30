@@ -12,7 +12,6 @@ import com.mwa.photoframe.api.PhotoErrorCode;
 import com.mwa.photoframe.api.PhotoFrameException;
 import com.mwa.photoframe.config.PhotoFrameConfig;
 import com.mwa.photoframe.source.GooglePhotosCredentialProvider;
-import com.mwa.photoframe.source.GooglePhotosImageCache;
 import com.mwa.photoframe.source.GooglePhotosCredentials;
 import com.mwa.photoframe.source.GooglePhotosPickedPhotoSource;
 import com.mwa.photoframe.source.GooglePhotosPickedStore;
@@ -21,11 +20,13 @@ import com.mwa.photoframe.source.LocalFolderPhotoSource;
 import com.mwa.photoframe.source.PhotoEntry;
 import com.mwa.photoframe.source.PhotoSource;
 import com.mwa.photoframe.util.GoogleHttpTrace;
+import com.mwa.photoframe.util.PhotoFramePaths;
 import com.mwa.photoframe.util.PhotoFrameTraceLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -139,10 +140,9 @@ public class PhotoCatalogService {
             return new FileSystemResource(file);
         }
         if (entry.isGoogle()) {
-            Path cached = imageCacheService.cachedFile(entry.getId());
-            if (Files.isRegularFile(cached)) {
-                PhotoFrameTraceLog.debugPath(log, "serve-google-cache-hit", cached);
-                return new FileSystemResource(cached);
+            if (imageCacheService.isCached(entry.getId())) {
+                log.debug("Google serve storage hit id={} key={}", entry.getId(), imageCacheService.storageKey(entry.getId()));
+                return new InputStreamResource(imageCacheService.openCached(entry.getId()));
             }
             log.debug("Google serve cache-miss id={} — fetching", entry.getId());
             if (googleCredentialProvider == null) {
@@ -152,9 +152,9 @@ public class PhotoCatalogService {
             String label = entry.getId();
             imageBytes = HeicImageConverter.toCacheJpeg(imageBytes, entry.getMimeType(), label);
             try {
-                GooglePhotosImageCache.saveJpeg(imageCacheService.cacheDir(), entry.getId(), imageBytes);
-            } catch (IOException saveEx) {
-                PhotoFrameTraceLog.logIoFailure(log, "serve-google-cache-write", cached, saveEx);
+                imageCacheService.saveJpeg(entry.getId(), imageBytes);
+            } catch (Exception saveEx) {
+                log.warn("Could not store image in storage for {}: {}", entry.getId(), saveEx.getMessage(), saveEx);
             }
             return new ByteArrayResource(imageBytes);
         }
@@ -288,28 +288,14 @@ public class PhotoCatalogService {
     }
 
     private Path resolveProjectRelativePath(String pathStr) {
-        Path path = Paths.get(pathStr);
-        if (!path.isAbsolute()) {
-            Path projectRoot = Paths.get("").toAbsolutePath().getParent();
-            if (projectRoot != null) {
-                path = projectRoot.resolve(path).normalize();
-            }
-        }
-        return path;
+        return PhotoFramePaths.resolve(pathStr);
     }
 
     private Path resolveLocalFolder(String folderParam) {
         String pathStr = folderParam != null && !folderParam.trim().isEmpty()
                 ? folderParam.trim()
                 : config.getLocalFolder();
-        Path folder = Paths.get(pathStr);
-        if (!folder.isAbsolute()) {
-            Path projectRoot = Paths.get("").toAbsolutePath().getParent();
-            if (projectRoot != null) {
-                folder = projectRoot.resolve(folder).normalize();
-            }
-        }
-        return folder;
+        return PhotoFramePaths.resolve(pathStr);
     }
 
     private String configuredSource() {

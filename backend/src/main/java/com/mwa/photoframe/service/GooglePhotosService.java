@@ -4,6 +4,7 @@ package com.mwa.photoframe.service;
 
 import com.mwa.photoframe.config.PhotoFrameConfig;
 import com.mwa.photoframe.source.GooglePhotosCredentials;
+import com.mwa.photoframe.util.PhotoFramePaths;
 import com.mwa.photoframe.util.PhotoFrameTraceLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Service
 public class GooglePhotosService {
@@ -31,13 +31,7 @@ public class GooglePhotosService {
     }
 
     private Path resolveProjectRelativePath(String pathStr) {
-        Path path = Paths.get(pathStr);
-        if (!path.isAbsolute()) {
-            Path projectRoot = Paths.get("").toAbsolutePath().getParent();
-            if (projectRoot != null) {
-                path = projectRoot.resolve(path).normalize();
-            }
-        }
+        Path path = PhotoFramePaths.resolve(pathStr);
         PhotoFrameTraceLog.tracePath(log, "resolve-path", path);
         return path;
     }

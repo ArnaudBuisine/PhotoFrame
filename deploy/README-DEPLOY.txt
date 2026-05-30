@@ -46,3 +46,10 @@ Do NOT use bare "java -jar ... &" in SSH without nohup — use ./start-backgroun
 Default log level: TRACE (if LOG_LEVEL is unset). Optional in java.env:
   LOG_LEVEL=DEBUG   — less verbose
   LOG_LEVEL=INFO    — production
+
+Google photo JPEG cache (storage-lib) — optional in java.env:
+  PHOTOFRAME_STORAGE_PROVIDER=filesystem   (default)
+  PHOTOFRAME_STORAGE_ROOT=.                (project root; relative paths resolved at startup)
+  PHOTOFRAME_STORAGE_GOOGLE_PREFIX=google-photos-cache
+  For Azure Blob: PHOTOFRAME_STORAGE_PROVIDER=azure, AZURE_STORAGE_CONNECTION_STRING=...,
+  and set storage.azure.container-name in application.properties or equivalent env.

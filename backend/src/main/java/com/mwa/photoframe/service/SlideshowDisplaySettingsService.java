@@ -5,13 +5,13 @@ package com.mwa.photoframe.service;
 import com.mwa.photoframe.config.PhotoFrameConfig;
 import com.mwa.photoframe.source.SlideshowDisplaySettings;
 import com.mwa.photoframe.source.SlideshowDisplaySettingsStore;
+import com.mwa.photoframe.util.PhotoFramePaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Service
 public class SlideshowDisplaySettingsService {
@@ -35,6 +35,6 @@ public class SlideshowDisplaySettingsService {
     }
 
     private Path resolvePath() {
-        return Paths.get(config.getDisplaySettingsFile()).toAbsolutePath().normalize();
+        return PhotoFramePaths.resolve(config.getDisplaySettingsFile());
     }
 }

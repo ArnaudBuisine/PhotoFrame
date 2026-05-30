@@ -25,6 +25,10 @@ public class PhotoFrameConfig {
     @Value("${photoframe.google.cache.dir:./google-photos-cache}")
     private String googleCacheDir;
 
+    /** Logical key prefix for Google JPEG blobs inside {@link com.photoframe.storage.StorageService}. */
+    @Value("${photoframe.storage.google.key-prefix:google-photos-cache}")
+    private String storageGoogleKeyPrefix;
+
     @Value("${photoframe.display.settings.file:./slideshow-display.json}")
     private String displaySettingsFile;
 
@@ -50,6 +54,10 @@ public class PhotoFrameConfig {
 
     public String getGoogleCacheDir() {
         return googleCacheDir;
+    }
+
+    public String getStorageGoogleKeyPrefix() {
+        return storageGoogleKeyPrefix;
     }
 
     public String getDisplaySettingsFile() {

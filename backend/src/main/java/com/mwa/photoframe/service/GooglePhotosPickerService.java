@@ -23,6 +23,7 @@ import com.mwa.photoframe.source.GooglePhotosClientFactory;
 import com.mwa.photoframe.source.GooglePhotosCredentials;
 import com.mwa.photoframe.source.GooglePhotosPickedStore;
 import com.mwa.photoframe.util.GoogleHttpTrace;
+import com.mwa.photoframe.util.PhotoFramePaths;
 import com.mwa.photoframe.util.PhotoFrameTraceLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -368,13 +369,7 @@ public class GooglePhotosPickerService {
     }
 
     private Path resolvePickedPath() {
-        Path path = Paths.get(config.getGooglePickedFile());
-        if (!path.isAbsolute()) {
-            Path projectRoot = Paths.get("").toAbsolutePath().getParent();
-            if (projectRoot != null) {
-                path = projectRoot.resolve(path).normalize();
-            }
-        }
+        Path path = PhotoFramePaths.resolve(config.getGooglePickedFile());
         PhotoFrameTraceLog.tracePath(log, "picker-picked-path", path);
         return path;
     }

@@ -24,6 +24,7 @@ Build NAS packages from **`java11`** (`photoframe-deploy-1.0.0-java11.tar.gz`). 
 
 - **Java 21** (JDK 21; this is branch `main`)
 - Maven 3.6+
+- **[storage-lib](../storage-lib)** built into the local Maven repo (`cd ../storage-lib && mvn install`) — PhotoFrame uses it for Google photo JPEG cache (filesystem or Azure Blob)
 
 ## Dependencies
 
@@ -39,6 +40,16 @@ mvn spring-boot:run
 Open: **http://localhost:8082/** (query parameters on `/` are preserved; you can also use `/index.html?...`)
 
 Put JPEG/PNG/GIF/HEIC files in `photoframe/images/`. HEIC files are converted to JPEG when served (pure Java via Openize HEIC), so older browsers can display iPhone photos.
+
+## Deploy (Azure container)
+
+PhotoFrame can run on **Azure Container Instances** with storage and Google OAuth configured via **environment variables** at launch (same pattern as BookForge).
+
+See **[README/AZURE_DEPLOYMENT.md](README/AZURE_DEPLOYMENT.md)** for:
+
+- GitHub Actions: build image → `ghcr.io/<user>/photoframe` → deploy to ACI
+- `PHOTOFRAME_STORAGE_PROVIDER` (`azure` or `filesystem`), `AZURE_STORAGE_CONNECTION_STRING`, and Google secrets
+- Manual `az container create` templates in `azure-configurations.template.txt`
 
 ## Deploy (tar.gz package)
 
@@ -102,6 +113,15 @@ http://localhost:8082/?interval=60&folder=./images
 | `photoframe.timer.seconds.default` | Default interval if URL omits `interval` |
 | `photoframe.google.credentials.path` | Path to Google OAuth properties file |
 | `photoframe.google.picked.file` | JSON file for picker selection (default `./google-photos-picked.json`) |
+| `storage.provider` | `filesystem` (default) or `azure` — [storage-lib](../storage-lib) |
+| `storage.filesystem.root-directory` | Root for blob keys (default `.` = photoframe project directory when run from `backend/`) |
+| `photoframe.storage.google.key-prefix` | Folder/prefix for cached Google JPEGs (default `google-photos-cache`) |
+| `storage.azure.connection-string` | Required when `storage.provider=azure` |
+| `storage.azure.container-name` | Azure container (created if missing) |
+
+Environment overrides: `PHOTOFRAME_STORAGE_PROVIDER`, `PHOTOFRAME_STORAGE_ROOT`, `PHOTOFRAME_STORAGE_GOOGLE_PREFIX`, `AZURE_STORAGE_CONNECTION_STRING`.
+
+Cached Google photos are stored as `{key-prefix}/{mediaId}.jpg` under the storage root (same on-disk layout as before when using filesystem + default prefix).
 
 ## Google Photos setup
 

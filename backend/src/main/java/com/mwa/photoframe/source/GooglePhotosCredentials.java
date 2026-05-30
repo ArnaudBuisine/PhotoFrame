@@ -33,7 +33,22 @@ public class GooglePhotosCredentials {
         this.refreshToken = refreshToken;
     }
 
+    public static GooglePhotosCredentials fromEnvironment() {
+        String clientId = trimEnv("GOOGLE_PHOTOS_CLIENT_ID");
+        String clientSecret = trimEnv("GOOGLE_PHOTOS_CLIENT_SECRET");
+        String refreshToken = trimEnv("GOOGLE_PHOTOS_REFRESH_TOKEN");
+        if (clientId.isEmpty() || clientSecret.isEmpty() || refreshToken.isEmpty()) {
+            return null;
+        }
+        log.debug("Google credentials loaded from environment variables");
+        return new GooglePhotosCredentials(clientId, clientSecret, refreshToken);
+    }
+
     public static GooglePhotosCredentials load(Path path) throws IOException {
+        GooglePhotosCredentials fromEnv = fromEnvironment();
+        if (fromEnv != null) {
+            return fromEnv;
+        }
         PhotoFrameTraceLog.tracePath(log, "credentials-load", path);
         Properties props = new Properties();
         if (!Files.isRegularFile(path)) {
@@ -71,5 +86,10 @@ public class GooglePhotosCredentials {
 
     public String getRefreshToken() {
         return refreshToken;
+    }
+
+    private static String trimEnv(String name) {
+        String value = System.getenv(name);
+        return value != null ? value.trim() : "";
     }
 }
