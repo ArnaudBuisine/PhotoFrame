@@ -8,10 +8,10 @@ Full-screen photo slideshow for old browsers (including Safari on iPad 1). Java 
 
 | Branch | Java | Spring Boot | Use |
 |--------|------|-------------|-----|
-| **`main`** (default) | **17+** | 3.2.x | Development, modern hosts |
+| **`main`** (default) | **21** | 3.2.x | Development, modern hosts |
 | **`java11`** | **11** | 2.7.18 | Synology NAS and other Java 11-only systems |
 
-Build NAS packages from **`java11`** (`photoframe-deploy-1.0.0-java11.tar.gz`). Build from **`main`** for Java 17 (`photoframe-deploy-2.0.0.tar.gz`). See [CONTRIBUTING.md](CONTRIBUTING.md).
+Build NAS packages from **`java11`** (`photoframe-deploy-1.0.0-java11.tar.gz`). Build from **`main`** for Java 21 (`photoframe-deploy-2.0.0.tar.gz`). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Features
 
@@ -22,7 +22,7 @@ Build NAS packages from **`java11`** (`photoframe-deploy-1.0.0-java11.tar.gz`). 
 
 ## Requirements
 
-- **Java 17** or newer (JDK 17+; this is branch `main`)
+- **Java 21** (JDK 21; this is branch `main`)
 - Maven 3.6+
 
 ## Dependencies
@@ -50,7 +50,7 @@ Build a ready-to-install archive (JAR, scripts, templates, data folders):
 
 Output: `dist/photoframe-deploy-2.0.0.tar.gz`
 
-Requires **Java 17+** on the target host. For Synology NAS (Java 11), use branch **`java11`** and `photoframe-deploy-1.0.0-java11.tar.gz` instead.
+Requires **Java 21** on the target host. For Synology NAS (Java 11), use branch **`java11`** and `photoframe-deploy-1.0.0-java11.tar.gz` instead.
 
 ```bash
 tar xzf photoframe-deploy-2.0.0.tar.gz -C /opt/photoframe

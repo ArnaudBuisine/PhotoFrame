@@ -5,7 +5,7 @@
 
 ## Branches
 
-- **`main`** — Java 17, Spring Boot 3.x. Default for new features and day-to-day development.
+- **`main`** — Java 21, Spring Boot 3.x. Default for new features and day-to-day development.
 - **`java11`** — Java 11, Spring Boot 2.7.18. Long-term support for Synology NAS (`/volume1/java/current`).
 
 ## Where to work
@@ -37,7 +37,7 @@ git checkout java11
 ./scripts/build-deploy-tar.sh
 # → dist/photoframe-deploy-1.0.0-java11.tar.gz
 
-# Modern hosts (Java 17)
+# Modern hosts (Java 21)
 git checkout main
 ./scripts/build-deploy-tar.sh
 # → dist/photoframe-deploy-2.0.0.tar.gz

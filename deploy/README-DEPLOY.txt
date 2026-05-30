@@ -1,7 +1,7 @@
-PhotoFrame deployment package (Linux) — Java 17 / main branch
+PhotoFrame deployment package (Linux) — Java 21 / main branch
 ===========================================================
 
-Requirements: Java 17+. Set JAVA_BIN in java.env to your JDK 17+ java binary.
+Requirements: Java 21. Set JAVA_BIN in java.env to your JDK 21 java binary.
 
 For Synology NAS (Java 11), build and deploy from git branch java11
 (archive photoframe-deploy-1.0.0-java11.tar.gz), not this package.
