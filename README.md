@@ -4,6 +4,15 @@
 
 Full-screen photo slideshow for old browsers (including Safari on iPad 1). Java backend + plain HTML/ES5 frontend.
 
+## Branches
+
+| Branch | Java | Spring Boot | Use |
+|--------|------|-------------|-----|
+| **`main`** (default) | **17+** | 3.2.x | Development, modern hosts |
+| **`java11`** | **11** | 2.7.18 | Synology NAS and other Java 11-only systems |
+
+Build NAS packages from **`java11`** (`photoframe-deploy-1.0.0-java11.tar.gz`). Build from **`main`** for Java 17 (`photoframe-deploy-2.0.0.tar.gz`). See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Features
 
 - Display one photo at a time, full screen or sized with **width**, **height**, and **position** in pixels (editable on `/myphotoframe.html`; photo fits inside the box, aspect ratio preserved)
@@ -13,7 +22,7 @@ Full-screen photo slideshow for old browsers (including Safari on iPad 1). Java 
 
 ## Requirements
 
-- **Java 11** or newer (JDK 11+)
+- **Java 17** or newer (JDK 17+; this is branch `main`)
 - Maven 3.6+
 
 ## Dependencies
@@ -39,12 +48,12 @@ Build a ready-to-install archive (JAR, scripts, templates, data folders):
 ./scripts/build-deploy-tar.sh
 ```
 
-Output: `dist/photoframe-deploy-1.0.0.tar.gz`
+Output: `dist/photoframe-deploy-2.0.0.tar.gz`
 
-On Linux (Java 11+). The package `run.sh` uses **`/volume1/java/current/bin/java`** by default (edit `java.env` if needed):
+Requires **Java 17+** on the target host. For Synology NAS (Java 11), use branch **`java11`** and `photoframe-deploy-1.0.0-java11.tar.gz` instead.
 
 ```bash
-tar xzf photoframe-deploy-1.0.0.tar.gz -C /volume1/photoframe
+tar xzf photoframe-deploy-2.0.0.tar.gz -C /opt/photoframe
 cd /volume1/photoframe/photoframe
 cp google-photos-credentials.properties.template google-photos-credentials.properties
 # edit google-photos-credentials.properties

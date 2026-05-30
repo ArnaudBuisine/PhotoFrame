@@ -8,20 +8,20 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.18</version>
+        <version>3.2.12</version>
         <relativePath/>
     </parent>
 
     <groupId>com.mwa.photoframe</groupId>
     <artifactId>photoframe-backend</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <packaging>jar</packaging>
 
     <name>PhotoFrame Backend</name>
     <description>Photo slideshow server for local folder and Google Photos picker selection</description>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>com.google.http-client</groupId>
-            <artifactId>google-http-client-jackson2</artifactId>
+            <artifactId>google-http-client-gson</artifactId>
             <version>1.43.3</version>
         </dependency>
         <dependency>

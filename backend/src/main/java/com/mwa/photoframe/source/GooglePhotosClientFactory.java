@@ -5,7 +5,7 @@ package com.mwa.photoframe.source;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.mwa.photoframe.api.PhotoErrorCode;
 import com.mwa.photoframe.api.PhotoFrameException;
 import com.mwa.photoframe.util.PhotoFrameTraceLog;
@@ -32,7 +32,7 @@ public final class GooglePhotosClientFactory {
             NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
             GoogleCredential credential = new GoogleCredential.Builder()
                     .setTransport(transport)
-                    .setJsonFactory(JacksonFactory.getDefaultInstance())
+                    .setJsonFactory(GsonFactory.getDefaultInstance())
                     .setClientSecrets(creds.getClientId(), creds.getClientSecret())
                     .build()
                     .setRefreshToken(creds.getRefreshToken())

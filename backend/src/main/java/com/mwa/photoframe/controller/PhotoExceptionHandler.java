@@ -6,7 +6,7 @@ import com.mwa.photoframe.api.PhotoApiResponse;
 import com.mwa.photoframe.api.PhotoErrorCode;
 import com.mwa.photoframe.api.PhotoFrameException;
 import com.mwa.photoframe.util.PhotoFrameTraceLog;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ExceptionHandler;

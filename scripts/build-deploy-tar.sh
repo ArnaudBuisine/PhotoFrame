@@ -4,7 +4,7 @@
 # Build photoframe.jar and pack a deployable tar.gz (extract, configure, ./run.sh).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="1.0.0"
+VERSION="2.0.0"
 DIST="$ROOT/dist"
 STAGE="$DIST/photoframe"
 ARCHIVE="$DIST/photoframe-deploy-${VERSION}.tar.gz"

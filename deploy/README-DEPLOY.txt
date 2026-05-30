@@ -1,7 +1,10 @@
-PhotoFrame deployment package (Linux)
-=====================================
+PhotoFrame deployment package (Linux) — Java 17 / main branch
+===========================================================
 
-Requirements: Java 11+. JDK: /volume1/java/current/bin/java (edit java.env).
+Requirements: Java 17+. Set JAVA_BIN in java.env to your JDK 17+ java binary.
+
+For Synology NAS (Java 11), build and deploy from git branch java11
+(archive photoframe-deploy-1.0.0-java11.tar.gz), not this package.
 
 Logging (same system as BookForge):
   logs/backend/photoframe.log   — main log
@@ -14,7 +17,7 @@ Logging (same system as BookForge):
 1. Extract (IMPORTANT — parent directory, not inside photoframe):
 
      cd /volume1/apps
-     tar xzf photoframe-deploy-1.0.0.tar.gz
+     tar xzf photoframe-deploy-2.0.0.tar.gz
      cd photoframe
      ls -la start-background.sh run.sh stop.sh
 
