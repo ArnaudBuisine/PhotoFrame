@@ -40,7 +40,7 @@ RUN mkdir -p /app/data /app/logs
 COPY --from=build /build/backend/target/photoframe.jar /app/photoframe.jar
 COPY google-photos-credentials.properties.template /app/
 COPY google-photos-picked.json.template /app/google-photos-picked.json
-COPY slideshow-display.json.template /app/slideshow-display.json
+COPY deploy/slideshow-display.json.template /app/slideshow-display.json
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 

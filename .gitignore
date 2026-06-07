@@ -12,3 +12,5 @@ backend/slideshow-display.json
 images/*
 !images/.gitkeep
 .env
+java.env
+azure-configurations.txt

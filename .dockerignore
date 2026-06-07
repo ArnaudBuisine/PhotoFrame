@@ -9,3 +9,5 @@ google-photos-picked.json
 google-photos-cache
 *.md
 .env
+java.env
+azure-configurations.txt

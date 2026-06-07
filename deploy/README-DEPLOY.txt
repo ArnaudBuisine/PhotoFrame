@@ -1,7 +1,7 @@
 PhotoFrame deployment package (Linux) — Java 21 / main branch
 ===========================================================
 
-Requirements: Java 21. Set JAVA_BIN in java.env to your JDK 21 java binary.
+Requirements: Java 21. Copy java.env.template to java.env and set JAVA_BIN to your JDK 21 java binary.
 
 For Synology NAS (Java 11), build and deploy from git branch java11
 (archive photoframe-deploy-1.0.0-java11.tar.gz), not this package.
@@ -28,7 +28,9 @@ Logging (same system as BookForge):
      cd /volume1/apps && tar xzf photoframe-deploy-1.0.0.tar.gz
      cp -f photoframe/start-background.sh photoframe/stop.sh photoframe/photoframe.jar /volume1/apps/photoframe/
 2. cp google-photos-credentials.properties.template google-photos-credentials.properties
-3. ./start-background.sh
+3. cp java.env.template java.env
+   # edit java.env — set JAVA_BIN for your host
+4. ./start-background.sh
 
 Watch logs:
   tail -f logs/backend/photoframe.log
